@@ -5,6 +5,7 @@ import (
   "html/template"
   "net/http"
   "io"
+  "path/filepath"
 
   "github.com/labstack/echo/v4"
 )
@@ -24,18 +25,32 @@ func (t *TemplateRegistry) Render(w io.Writer, name string, data interface{}, c 
   return tmpl.ExecuteTemplate(w, "base.html", data)
 }
 
+func SetupTemplateRegistry(parentPath string, baseTemplatePath string) *TemplateRegistry {
+  files, err := filepath.Glob("testFolder/*.go")
+  if err != nil {
+      log.Fatal(err)
+  }
+
+  for _, file := range files {
+      fmt.Println(file)
+  }
+
+  templates := make(map[string]*template.Template)
+  templates["home.html"] = template.Must(template.ParseFiles("resources/view/home.html", baseTemplatePath))
+  templates["about.html"] = template.Must(template.ParseFiles("resources/view/about.html", baseTemplatePath))
+  return &TemplateRegistry{
+    templates: templates,
+  }
+}
+
 func main() {
   // Echo instance
   e := echo.New()
 
   // Instantiate a template registry with an array of template set
   // Ref: https://gist.github.com/rand99/808e6e9702c00ce64803d94abff65678
-  templates := make(map[string]*template.Template)
-  templates["home.html"] = template.Must(template.ParseFiles("resources/view/home.html", "resources/view/base.html"))
-  templates["about.html"] = template.Must(template.ParseFiles("resources/view/about.html", "resources/view/base.html"))
-  e.Renderer = &TemplateRegistry{
-    templates: templates,
-  }
+
+  e.Renderer = SetupTemplateRegistry("resources/*", "resources/view/base.html")
 
   // Route => handler
   e.GET("/", func (c echo.Context) error {

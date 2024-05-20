@@ -6,10 +6,14 @@ import (
   "html/template"
   "net/http"
   "io"
-  "path/filepath"
+  "io/fs"
+  "embed"
 
   "github.com/labstack/echo/v4"
 )
+
+//go:embed resources
+var embededFiles embed.FS
 
 // Define the template registry struct
 type TemplateRegistry struct {
@@ -22,13 +26,14 @@ func (t *TemplateRegistry) Render(w io.Writer, name string, data interface{}, c 
   tmpl, ok := t.templates[name]
   if !ok {
     err := errors.New("Template not found -> " + name)
+    log.Println(err)
     return err
   }
   return tmpl.ExecuteTemplate(w, t.baseTemplatePath, data)
 }
 
 func SetupTemplateRegistry(parentPath string, baseTemplatePath string) *TemplateRegistry {
-  files, err := filepath.Glob(parentPath)
+  files, err := fs.Glob(embededFiles, parentPath)
   if err != nil {
       log.Println(err)
   }
@@ -36,7 +41,7 @@ func SetupTemplateRegistry(parentPath string, baseTemplatePath string) *Template
   log.Printf("found %v files\n", len(files))
   templates := make(map[string]*template.Template)
   for _, filePath := range files {
-      templates[filePath] = template.Must(template.ParseFiles(filePath, baseTemplatePath))
+    templates[filePath] = template.Must(template.ParseFS(embededFiles, filePath, baseTemplatePath))
   }
 
   return &TemplateRegistry{

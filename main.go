@@ -57,7 +57,7 @@ func main() {
   e.Renderer = SetupTemplateRegistry("resources/view/*", "resources/view/base.html")
   // Route => handler
   e.GET("/", func (c echo.Context) error {
-    return c.Render(http.StatusOK, "resources/view/home.html", map[string]interface{}{})
+    return c.Render(http.StatusOK, "resources/view/home.html", nil)
   })
   e.GET("/about", func (c echo.Context) error {
     return c.Render(http.StatusOK, "resources/view/about.html", map[string]interface{}{

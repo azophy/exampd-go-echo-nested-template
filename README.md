@@ -8,6 +8,8 @@ goals:
  - [x] ability to use built-in Labstack Echo renderer support
  - [x] ability to define the templates dynamically by file structure
  - [x] ability to utilize embedded asset library
+ - [ ] ability to define & choose base template on each sub-template
+ - [ ] ability to choose between rendering template based on base layout or just partially
 
 ## Licenses
 

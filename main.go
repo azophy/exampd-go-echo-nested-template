@@ -9,12 +9,14 @@ import (
   "io/fs"
   "embed"
   "strings"
+  "regexp"
 
   "github.com/labstack/echo/v4"
 )
 
 //go:embed resources
 var embededFiles embed.FS
+var templateModifierRegex = regexp.MustCompile(`#([a-z_0-9]+)`)
 
 // Define the template registry struct
 type TemplateRegistry struct {
@@ -23,15 +25,24 @@ type TemplateRegistry struct {
 }
 
 // Implement e.Renderer interface
-func (t *TemplateRegistry) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
+func (t *TemplateRegistry) Render(w io.Writer, templateName string, data interface{}, c echo.Context) error {
+  name := templateModifierRegex.ReplaceAllString(templateName, "")
+  log.Printf("name: %v\n", name)
+
   tmpl, ok := t.templates[name]
-  baseTemplatePath := t.baseTemplatePaths[name]
   if !ok {
     err := errors.New("Template not found -> " + name)
     log.Println(err)
     return err
   }
-  err := tmpl.ExecuteTemplate(w, baseTemplatePath, data)
+
+  renderName := t.baseTemplatePaths[name]
+  res := templateModifierRegex.FindStringSubmatch(templateName)
+  if len(res) > 1 && res[1] == "partial" {
+    renderName = "body"
+  }
+  log.Printf("rendername: %v\n", renderName)
+  err := tmpl.ExecuteTemplate(w, renderName, data)
   if err != nil {
     log.Println(err)
     return err
@@ -95,6 +106,9 @@ func main() {
   // Route => handler
   e.GET("/", func (c echo.Context) error {
     return c.Render(http.StatusOK, "resources/view/home.html", nil)
+  })
+  e.GET("/home_partial", func (c echo.Context) error {
+    return c.Render(http.StatusOK, "resources/view/home.html#partial", nil)
   })
   e.GET("/about", func (c echo.Context) error {
     return c.Render(http.StatusOK, "resources/view/about.html", map[string]interface{}{
